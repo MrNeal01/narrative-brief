@@ -1,0 +1,885 @@
+<!doctype html>
+<html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Narrative Brief Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: studio workbench — step rail on the left, one section at a time on a work surface, PDF "paper" at the end */
+:root{
+  --bg:#ECF0F2; --surface:#FFFFFF; --sunk:#E2E8EB; --ink:#14212A; --muted:#55656F; --line:#CBD4D9;
+  --accent:#0B7A75; --accent-ink:#FFFFFF; --accent-soft:#D3ECEA;
+  --ex-bg:#FFF3D6; --ex-ink:#5E420C; --ex-line:#E8C67A;
+  --ok:#1E7A3C; --warn:#A15C00; --danger:#B42318;
+  --paper:#FFFFFF; --paper-ink:#1A1F24; --paper-muted:#6B7480; --paper-line:#D7DDE2; --paper-accent:#0B7A75; --paper-soft:#EEF5F4;
+  --f-display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E151A; --surface:#162128; --sunk:#1D2A32; --ink:#E4EBEE; --muted:#92A2AC; --line:#2B3943;
+  --accent:#43C3B9; --accent-ink:#04201E; --accent-soft:#163A38;
+  --ex-bg:#2A2314; --ex-ink:#F0D69E; --ex-line:#5E4A22;
+  --ok:#6FD08F; --warn:#F2B35C; --danger:#F2877C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E151A; --surface:#162128; --sunk:#1D2A32; --ink:#E4EBEE; --muted:#92A2AC; --line:#2B3943;
+  --accent:#43C3B9; --accent-ink:#04201E; --accent-soft:#163A38;
+  --ex-bg:#2A2314; --ex-ink:#F0D69E; --ex-line:#5E4A22;
+  --ok:#6FD08F; --warn:#F2B35C; --danger:#F2877C; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0;flex:1 1 220px}
+.brand b{font-family:var(--f-display);font-size:19px;font-weight:800}
+.brand span{color:var(--muted);font-size:13px}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:6px 12px;cursor:pointer;font-weight:700;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.chipbtn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:500}
+.chipbtn[aria-pressed="true"]{border-color:var(--ex-line);background:var(--ex-bg);color:var(--ex-ink)}
+.grouptag{display:inline-flex;gap:6px;align-items:center;font-size:13px;padding:6px 10px;border-radius:999px;background:var(--accent-soft)}
+.grouptag b{max-width:16ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.status{font-size:12px;color:var(--muted);min-width:9ch}
+.status.warn{color:var(--warn)}
+
+/* shell */
+.shell{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 60px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:24px;align-items:start}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 78px);display:flex;flex-direction:column;gap:2px}
+.rail button{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--muted)}
+.rail button:hover{background:var(--sunk)}
+.rail button[aria-current="step"]{background:var(--surface);color:var(--ink);box-shadow:inset 3px 0 0 var(--accent)}
+.rail .nm{font-weight:500;font-size:14px;line-height:1.25}
+.rail .no{font-family:var(--f-mono);font-size:11px}
+.dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--line)}
+.dot.part{border-color:var(--accent);background:linear-gradient(90deg,var(--accent) 50%,transparent 50%)}
+.dot.done{border-color:var(--accent);background:var(--accent)}
+.meter{height:6px;border-radius:99px;background:var(--sunk);overflow:hidden;margin:4px 10px 12px}
+.meter i{display:block;height:100%;background:var(--accent);transition:width .3s}
+
+/* main */
+.main{min-width:0;display:flex;flex-direction:column;gap:18px}
+.sec-head{display:grid;grid-template-columns:64px minmax(0,1fr);gap:16px;align-items:center}
+.sec-ic{width:64px;height:64px;border-radius:16px;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.sec-ic svg{width:34px;height:34px}
+.sec-head h1{font-size:clamp(26px,4vw,36px);font-weight:800}
+.sec-head p{margin:6px 0 0;color:var(--muted);max-width:62ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:22px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.field>label,.field>.lbl{font-weight:700;font-size:15px}
+.hint{color:var(--muted);font-size:14px;margin:-4px 0 0}
+.ex{border:1px dashed var(--ex-line);background:var(--ex-bg);color:var(--ex-ink);border-radius:8px;padding:10px 12px;font-size:14px}
+.ex .tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:500;display:block;margin-bottom:4px;opacity:.85}
+.ex table{border-collapse:collapse;width:100%;font-size:13px}
+.ex td,.ex th{border-top:1px solid var(--ex-line);padding:4px 6px;text-align:left;vertical-align:top}
+.ex th{font-weight:700}
+.ex ul,.ex ol{margin:0;padding-left:20px}
+.exwrap{overflow-x:auto}
+input[type=text],textarea,select{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;min-width:0}
+textarea{min-height:84px;resize:vertical}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;background:var(--surface)}
+.row .idx{font-family:var(--f-mono);font-size:12px;color:var(--muted);padding-top:22px}
+.cells{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.cell{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cell span{font-size:12px;color:var(--muted);font-weight:500}
+.rowfoot{grid-column:2;display:flex;justify-content:flex-end}
+.fixedlbl{font-weight:700;font-size:14px}
+.fixedlbl small{display:block;font-weight:400;color:var(--muted)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500;display:inline-flex;gap:8px;align-items:center}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:4px 8px;font-size:13px}
+.btn.ghost:hover{color:var(--danger)}
+.btn:disabled{opacity:.55;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px;background:var(--bg)}
+.chips input{accent-color:var(--accent)}
+.chips label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.checks{display:flex;flex-direction:column;gap:8px}
+.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.checks input{margin-top:4px;accent-color:var(--accent);width:17px;height:17px;flex:none}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.imgs figure{margin:0;position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3;max-width:100%;background:var(--sunk)}
+.imgs img{width:100%;height:100%;object-fit:cover;display:block}
+.imgs figure button{position:absolute;top:6px;right:6px;border:0;border-radius:6px;background:var(--surface);color:var(--ink);padding:2px 8px;cursor:pointer;font-size:12px}
+.drop{border:2px dashed var(--line);border-radius:8px;aspect-ratio:4/3;display:grid;place-items:center;text-align:center;color:var(--muted);cursor:pointer;font-size:14px;padding:8px;background:var(--bg)}
+.drop:hover{border-color:var(--accent);color:var(--accent)}
+.visual{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:16px;overflow-x:auto}
+.visual svg{display:block;width:100%;height:auto;min-width:520px}
+.visual figcaption{color:var(--muted);font-size:13px;margin-top:8px}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* review */
+.prog{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.prog button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface);cursor:pointer}
+.prog button:hover{border-color:var(--accent)}
+.prog .bar{grid-column:1/-1;height:5px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.prog .bar i{display:block;height:100%;background:var(--accent)}
+.prog .pc{font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.exportbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.note{border-left:3px solid var(--accent);padding:8px 12px;background:var(--accent-soft);border-radius:0 8px 8px 0;font-size:14px}
+.note.warn{border-color:var(--warn)}
+.paperwrap{overflow-x:auto;background:var(--sunk);border-radius:var(--r);padding:16px}
+
+/* paper (PDF) — fixed print colours, hex only for the PDF renderer */
+#paper{width:700px;margin:0 auto;background:var(--paper);color:var(--paper-ink);font-family:var(--f-body);font-size:12.5px;line-height:1.45;padding:28px 30px}
+#paper h1{font-size:26px;font-weight:800;color:var(--paper-ink)}
+#paper h2{font-size:16px;font-weight:800;color:var(--paper-accent);margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--paper-accent)}
+#paper h3{font-size:12.5px;font-family:var(--f-body);font-weight:700;margin:10px 0 3px;color:var(--paper-ink)}
+#paper p{margin:0}
+#paper .pmeta{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;padding:10px 12px;background:var(--paper-soft);border-radius:6px}
+#paper .pmeta span{color:var(--paper-muted)}
+#paper .kick{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-muted)}
+#paper .empty{color:var(--paper-muted);font-style:italic}
+#paper table{width:100%;border-collapse:collapse;margin-top:2px;font-size:11.5px}
+#paper th{background:var(--paper-soft);text-align:left;font-weight:700;padding:5px 6px;border:1px solid var(--paper-line)}
+#paper td{padding:5px 6px;border:1px solid var(--paper-line);vertical-align:top}
+#paper ul{margin:2px 0 0;padding-left:18px}
+#paper .pimgs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+#paper .pimgs img{width:100%;border:1px solid var(--paper-line);border-radius:4px;display:block}
+#paper .pfoot{margin-top:22px;padding-top:8px;border-top:1px solid var(--paper-line);color:var(--paper-muted);font-size:10.5px;display:flex;justify-content:space-between}
+#paper svg text{font-family:var(--f-body)}
+
+/* gate */
+.gate{min-height:100%;display:grid;place-items:center;padding-inline:16px;padding-block:40px}
+.gate-card{width:100%;max-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.gate-card h1{font-size:30px;font-weight:800}
+.gate-card p{margin:0;color:var(--muted)}
+.gate-art{color:var(--accent)}
+.gate-art svg{width:100%;height:auto;display:block}
+.gate-row{display:flex;gap:10px;flex-wrap:wrap}
+.gate-row input{flex:1 1 200px}
+.recent{display:flex;flex-wrap:wrap;gap:8px}
+.err{color:var(--danger);font-size:14px;margin:0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:860px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:4px}
+  .rail button{grid-template-columns:auto auto;flex:none}
+  .rail .nm{display:none}
+  .rail button[aria-current="step"] .nm{display:block}
+  .rail .dot{display:none}
+  .meter{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="gate" class="gate"></div>
+<div id="app" hidden>
+  <header class="top"><div class="top-in" id="topbar"></div></header>
+  <div class="shell">
+    <nav class="rail" id="rail" aria-label="Sections"></nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+<input type="file" id="jsonIn" accept=".json,application/json" class="sr" tabindex="-1">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+"use strict";
+const L=(en,tr)=>({en,tr});
+const store={
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+};
+let lang=store.get("nb-lang")==="tr"?"tr":"en";
+let showEx=store.get("nb-ex")!=="0";
+const t=o=>o==null?"":(typeof o==="string"?o:(o[lang]??o.en));
+
+/* ---------- interface text ---------- */
+const U={
+  app:L("Narrative & Experience Brief","Anlatı ve Deneyim Özeti"),
+  course:L("Game Design Studio · Week 3","Oyun Tasarımı Stüdyosu · 3. Hafta"),
+  gateTitle:L("Which group are you?","Hangi gruptasınız?"),
+  gateText:L("Write your group name every time you open the form. Your answers are saved on this device under that name, so you can come back later.","Formu her açtığınızda grup adınızı yazın. Cevaplarınız bu cihazda bu ad altında kaydedilir; daha sonra kaldığınız yerden devam edebilirsiniz."),
+  groupLabel:L("Group name","Grup adı"),
+  groupPh:L("e.g. Team Nimbus","örn. Takım Nimbus"),
+  start:L("Start","Başla"),
+  needGroup:L("Write your group name to continue.","Devam etmek için grup adınızı yazın."),
+  recent:L("Saved on this device","Bu cihazda kayıtlı"),
+  openFile:L("Open a progress file","İlerleme dosyası aç"),
+  change:L("Change group","Grup değiştir"),
+  examples:L("Examples","Örnekler"),
+  example:L("Example — Seedrunner","Örnek — Tohum Koşucusu"),
+  addRow:L("Add row","Satır ekle"), remove:L("Remove","Sil"), addItem:L("Add item","Madde ekle"),
+  back:L("Back","Geri"), next:L("Next","İleri"),
+  saved:L("Saved","Kaydedildi"), saving:L("Saving…","Kaydediliyor…"),
+  notSaving:L("Not saving on this device","Bu cihazda kaydedilmiyor"),
+  addImg:L("Add image","Görsel ekle"), imgHint:L("PNG or JPG","PNG veya JPG"),
+  empty:L("Not filled in","Doldurulmadı"),
+  other:L("Other","Diğer"),
+  review:L("Review & download","Kontrol et ve indir"),
+  reviewIntro:L("Check what is missing, then download your PDF and upload it to the Blackboard assignment.","Eksikleri kontrol edin, ardından PDF'inizi indirip Blackboard ödevine yükleyin."),
+  completion:L("Completion","Tamamlanma"),
+  download:L("Download PDF","PDF indir"),
+  making:L("Making your PDF…","PDF hazırlanıyor…"),
+  pdfSaved:L("PDF saved","PDF kaydedildi"),
+  cancelled:L("Download cancelled","İndirme iptal edildi"),
+  dlFail:L("The PDF could not be made. Try again, or save a progress file and use another browser.","PDF oluşturulamadı. Tekrar deneyin ya da ilerleme dosyasını kaydedip başka bir tarayıcı kullanın."),
+  dlNone:L("Downloads are not available in this view. Open the form file your instructor shared instead.","Bu görünümde indirme kullanılamıyor. Bunun yerine hocanızın paylaştığı form dosyasını açın."),
+  saveJson:L("Save progress file","İlerleme dosyasını kaydet"),
+  loadJson:L("Open progress file","İlerleme dosyası aç"),
+  jsonNote:L("A progress file lets you continue on another computer or share the draft with your team.","İlerleme dosyası, başka bir bilgisayarda devam etmenizi veya taslağı ekibinizle paylaşmanızı sağlar."),
+  loaded:L("Progress file opened","İlerleme dosyası açıldı"),
+  badJson:L("That file is not a progress file from this form.","Bu dosya, bu formun ilerleme dosyası değil."),
+  bb:L("Submit: upload this PDF to the Week 3 assignment on Blackboard. One upload per group; the file name already includes your group name.","Teslim: Bu PDF'i Blackboard'daki 3. Hafta ödevine yükleyin. Her grup bir kez yükler; dosya adında grup adınız zaten yer alıyor."),
+  preview:L("PDF preview","PDF önizleme"),
+  members:L("Team","Ekip"),
+  gameTitle:L("Game","Oyun"),
+  date:L("Date","Tarih"),
+  group:L("Group","Grup"),
+  storageWarn:L("This browser is not keeping your answers. Save a progress file before you close the page.","Bu tarayıcı cevaplarınızı saklamıyor. Sayfayı kapatmadan önce ilerleme dosyasını kaydedin."),
+  intensity:L("Intensity","Yoğunluk"),
+  curve:L("Intensity curve — fill the Intensity column to draw it","Yoğunluk eğrisi — çizmek için Yoğunluk sütununu doldurun")
+};
+
+/* ---------- icons ---------- */
+const IC={
+  team:'<path d="M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.5 0a3 3 0 1 0 0-6M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6m1-6.5c2.6.3 5 2.6 5 6.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  premise:'<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6-4.5-4.2 6.1-.7Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/>',
+  world:'<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5s1.1-5.9 3.6-8.5Z" stroke="currentColor" stroke-width="1.8" fill="none"/>',
+  hero:'<circle cx="12" cy="7" r="3.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M5 21v-2.5A5.5 5.5 0 0 1 10.5 13h3a5.5 5.5 0 0 1 5.5 5.5V21M12 13v4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  conflict:'<path d="M5 19 19 5M14 5h5v5M19 19 5 5M10 5H5v5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  delivery:'<path d="M4 5h16v11H9l-5 4Z" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  bridge:'<rect x="3" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="15" y="3" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="15" y="16" width="6" height="5" rx="1.5" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M9 12h3m0 0V5.5h3M12 12v6.5h3" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  beats:'<path d="M3 18l4-4 4 2 4-8 6 4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="15" cy="8" r="1.6" fill="currentColor"/>',
+  scope:'<rect x="4" y="3.5" width="16" height="17" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M8 9l2 2 4-4M8 15.5h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  review:'<path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+};
+const svgIcon=k=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+IC[k]+'</svg>';
+
+/* ---------- the form ---------- */
+const YES_NO=[{v:"yes",l:L("Yes","Evet")},{v:"no",l:L("No","Hayır")}];
+const WHO=[{v:"designer",l:L("Designer","Tasarımcı")},{v:"developer",l:L("Developer","Geliştirici")},{v:"artist",l:L("Artist","Sanatçı")},{v:"team",l:L("Whole team","Tüm ekip")}];
+const REL=[{v:"friend",l:L("Friend","Dost")},{v:"enemy",l:L("Enemy","Düşman")},{v:"neutral",l:L("Neutral","Tarafsız")}];
+const PRIO=[{v:"must",l:L("Must have","Olmazsa olmaz")},{v:"nice",l:L("Nice to have","Olsa iyi olur")},{v:"cut",l:L("Cut if late","Geç kalırsak çıkar")}];
+const INT=[1,2,3,4,5].map(n=>({v:String(n),l:L(String(n),String(n))}));
+
+const SECTIONS=[
+{id:"team",icon:"team",title:L("Team","Ekip"),
+ intro:L("Who is on the team and what is the game called. This goes at the top of your PDF.","Ekipte kimler var ve oyunun adı ne? Bu bilgiler PDF'inizin en üstünde yer alır."),
+ fields:[
+  {id:"group",type:"text",label:L("Group name","Grup adı")},
+  {id:"title",type:"text",label:L("Working game title","Oyunun çalışma adı"),hint:L("It can change later.","Daha sonra değişebilir."),ex:L("Seedrunner","Tohum Koşucusu")},
+  {id:"designer",type:"text",label:L("Game designer","Oyun tasarımcısı"),half:true},
+  {id:"developer",type:"text",label:L("Developer","Geliştirici"),half:true},
+  {id:"artist",type:"text",label:L("Artist","Sanatçı"),half:true}
+ ]},
+{id:"premise",icon:"premise",title:L("Premise & player fantasy","Öncül ve oyuncu fantezisi"),
+ intro:L("Your game in one breath. If you cannot say it in one sentence, the scope is not clear yet.","Oyununuz tek nefeste. Tek cümleyle anlatamıyorsanız kapsam henüz net değildir."),
+ fields:[
+  {id:"logline",type:"area",label:L("Logline","Tek cümlelik özet (logline)"),hint:L("One sentence: who wants what, and what stands in the way.","Tek cümle: kim, ne istiyor ve önünde hangi engel var?"),
+   ex:L("A runaway courier robot climbs a collapsing sky-city to deliver the last seed before the city falls.","Kaçak bir kurye robot, şehir çökmeden son tohumu teslim etmek için yıkılan bir gökyüzü şehrine tırmanır.")},
+  {id:"fantasy",type:"area",label:L("Player fantasy","Oyuncu fantezisi"),hint:L("What does the player get to feel or be?","Oyuncu ne hissediyor ya da kim oluyor?"),
+   ex:L("Being small, fast and clever in a giant, hostile world.","Dev ve tehlikeli bir dünyada küçük, hızlı ve zeki olmak.")},
+  {id:"genre",type:"text",label:L("Genre","Tür"),hint:L("3D platformer plus your twist.","3D platform oyunu + sizin farkınız."),ex:L("3D platformer with light aim-and-shoot puzzles","Hafif nişan alma ve atış bulmacaları olan 3D platform oyunu"),half:true},
+  {id:"length",type:"select",label:L("Target play length","Hedef oynanış süresi"),half:true,opts:[{v:"5-10",l:L("5–10 minutes","5–10 dakika")},{v:"10-15",l:L("10–15 minutes","10–15 dakika")},{v:"15-20",l:L("15–20 minutes","15–20 dakika")},{v:"20+",l:L("More than 20 minutes","20 dakikadan fazla")}],ex:L("10–15 minutes","10–15 dakika")},
+  {id:"tone",type:"chips",max:3,label:L("Tone (pick up to 3)","Ton (en fazla 3 seçin)"),opts:[
+    {v:"hopeful",l:L("Hopeful","Umutlu")},{v:"eerie",l:L("Eerie","Ürkütücü")},{v:"comic",l:L("Comic","Komik")},{v:"melancholic",l:L("Melancholic","Hüzünlü")},
+    {v:"tense",l:L("Tense","Gergin")},{v:"cozy",l:L("Cozy","Sıcak")},{v:"mysterious",l:L("Mysterious","Gizemli")},{v:"epic",l:L("Epic","Destansı")},{v:"playful",l:L("Playful","Oyunbaz")}],
+   ex:L("Hopeful, tense, playful","Umutlu, gergin, oyunbaz")},
+  {id:"refs",type:"table",label:L("Reference games","Referans oyunlar"),hint:L("2–3 games and exactly what you take from each.","2–3 oyun ve her birinden tam olarak ne aldığınız."),min:2,
+   cols:[{id:"game",l:L("Game","Oyun")},{id:"take",l:L("What we take","Ne alıyoruz")}],
+   ex:{en:[["Super Mario Odyssey","Readable jumps, a secret in every corner"],["A Short Hike","Calm exploration of a small, vertical map"]],tr:[["Super Mario Odyssey","Okunaklı zıplamalar, her köşede bir sır"],["A Short Hike","Küçük ve dikey bir haritada sakin keşif"]]}},
+  {id:"goals",type:"list",min:3,label:L("Three experience goals","Üç deneyim hedefi"),hint:L("At the end of a session the player should feel…","Bir oturumun sonunda oyuncu şunu hissetmeli…"),
+   ex:{en:["Curious about what is above","Proud after a hard climb","Rushed and excited near the end"],tr:["Yukarıda ne olduğunu merak etmeli","Zor bir tırmanıştan sonra gurur duymalı","Sona doğru telaşlı ve heyecanlı olmalı"]}}
+ ]},
+{id:"world",icon:"world",title:L("World building","Dünya kurgusu"),
+ intro:L("Build only the world the player will touch. A detail that never appears in a level, an object or a line of text can stay in your head.","Yalnızca oyuncunun dokunacağı dünyayı kurun. Hiçbir bölümde, nesnede ya da metinde görünmeyecek bir ayrıntı kafanızda kalabilir."),
+ fields:[
+  {id:"setting",type:"area",label:L("Setting in one paragraph","Tek paragrafta mekân"),hint:L("Where and when are we, and what is wrong with this place right now?","Neredeyiz, hangi zamandayız ve bu yerde şu anda ne ters gidiyor?"),
+   ex:L("Aeria is a city floating on ancient engines. The engines are failing: districts break off and drop into the clouds, one by one.","Aeria, eski motorların üzerinde yüzen bir şehir. Motorlar bozuluyor: mahalleler birer birer kopup bulutların içine düşüyor.")},
+  {id:"rules",type:"table",min:2,label:L("World rules","Dünyanın kuralları"),hint:L("What is true here that is not true in our world? Each rule should explain a mechanic or an obstacle.","Burada doğru olup bizim dünyamızda olmayan ne? Her kural bir mekaniği ya da engeli açıklamalı."),
+   cols:[{id:"rule",l:L("World rule","Kural")},{id:"why",l:L("Why it exists in the story","Hikâyedeki nedeni")},{id:"does",l:L("What it does in gameplay","Oynanıştaki etkisi")}],
+   ex:{en:[["Gravity shifts every few minutes","The city's engine is failing","Platforms rotate; timing puzzles"]],tr:[["Yerçekimi birkaç dakikada bir yön değiştirir","Şehrin motoru bozuluyor","Platformlar döner; zamanlama bulmacaları"]]}},
+  {id:"history",type:"list",min:2,label:L("History","Geçmiş"),hint:L("The 2–3 past events that explain why the world looks this way today.","Dünyanın bugün neden böyle göründüğünü açıklayan 2–3 geçmiş olay."),
+   ex:{en:["The Builders left Aeria a hundred years ago","Nobody remembers how to repair the engines"],tr:["Kurucular Aeria'yı yüz yıl önce terk etti","Motorların nasıl onarılacağını kimse hatırlamıyor"]}},
+  {id:"factions",type:"table",min:2,label:L("Factions or forces","Gruplar ve güçler"),hint:L("Groups, creatures or systems the player meets.","Oyuncunun karşılaştığı gruplar, yaratıklar ya da sistemler."),
+   cols:[{id:"name",l:L("Name","Ad")},{id:"want",l:L("What they want","Ne istiyorlar")},{id:"rel",l:L("Relation","İlişki"),opts:REL},{id:"seen",l:L("How the player sees them","Oyuncu onları nasıl görür")}],
+   ex:{en:[["Rust Drones","Scrap everything that moves","Enemy","Patrolling enemies, piles of wreckage"]],tr:[["Pas Dronları","Hareket eden her şeyi hurdaya çevirmek","Düşman","Devriye gezen düşmanlar, hurda yığınları"]]}},
+  {id:"places",type:"table",min:3,label:L("Key places","Önemli mekânlar"),hint:L("Every area that will be built. These become your levels or level sections.","İnşa edilecek her alan. Bunlar bölümleriniz ya da bölüm parçalarınız olur."),
+   cols:[{id:"place",l:L("Place","Mekân")},{id:"mood",l:L("Mood / visual identity","Atmosfer / görsel kimlik")},{id:"story",l:L("Story purpose","Hikâyedeki amacı")},{id:"game",l:L("Gameplay purpose","Oynanıştaki amacı")}],
+   ex:{en:[["Lower Docks","Rusty orange, thick fog","Where the courier starts","Teaches jump and double jump"]],tr:[["Alt Rıhtımlar","Pas turuncusu, yoğun sis","Kuryenin başladığı yer","Zıplama ve çift zıplamayı öğretir"]]}},
+  {id:"mood",type:"images",max:4,label:L("Mood board","Mood board"),hint:L("Up to 4 images. The artist leads; the whole team agrees.","En fazla 4 görsel. Sanatçı yönlendirir, tüm ekip onaylar.")},
+  {id:"moodlink",type:"text",label:L("Mood board link (optional)","Mood board bağlantısı (isteğe bağlı)"),ex:L("https://www.figma.com/board/… or a Pinterest board","https://www.figma.com/board/… ya da bir Pinterest panosu")}
+ ]},
+{id:"hero",icon:"hero",title:L("Protagonist & player motivation","Kahraman ve oyuncu motivasyonu"),
+ intro:L("The character's goal and the player's goal should point the same way. Then the player keeps going for the story and for the gameplay.","Karakterin hedefi ile oyuncunun hedefi aynı yönü göstermeli. Böylece oyuncu hem hikâye hem oynanış için devam eder."),
+ fields:[
+  {id:"hname",type:"text",label:L("Name","Ad"),half:true,ex:L("Pip","Pip")},
+  {id:"hwhat",type:"text",label:L("What they are","Ne olduğu"),half:true,hint:L("Human, robot, animal, object…","İnsan, robot, hayvan, nesne…"),ex:L("A small courier robot","Küçük bir kurye robot")},
+  {id:"hsil",type:"text",label:L("Silhouette / visual hook","Siluet / görsel ayırt edici özellik"),hint:L("What makes them readable from behind, at a distance? (Your camera sees their back most of the time.)","Uzaktan ve arkadan bakınca onu ne tanınır kılıyor? (Kameranız çoğu zaman sırtını görür.)"),ex:L("Round body, one tall antenna with a glowing tip","Yuvarlak gövde, ucu parlayan tek uzun anten")},
+  {id:"hpers",type:"text",label:L("Personality in 3 words","3 kelimeyle kişilik"),half:true,ex:L("Curious, stubborn, kind","Meraklı, inatçı, iyi kalpli")},
+  {id:"hwant",type:"text",label:L("Wants (outer goal)","İstediği (dış hedef)"),half:true,ex:L("Deliver the seed to the Garden Tower","Tohumu Bahçe Kulesi'ne ulaştırmak")},
+  {id:"hneed",type:"text",label:L("Needs (inner change, optional)","İhtiyacı (iç değişim, isteğe bağlı)"),half:true,ex:L("Learn to ask others for help","Başkalarından yardım istemeyi öğrenmek")},
+  {id:"hobst",type:"text",label:L("Why can't they just do it?","Neden bunu hemen yapamıyor?"),half:true,ex:L("The lift is broken and drones guard every route up","Asansör bozuk ve dronlar yukarı çıkan her yolu koruyor")},
+  {id:"abilities",type:"table",min:2,label:L("Abilities and their story reason","Yetenekler ve hikâyedeki nedenleri"),hint:L("Every move the player has should make sense for this character.","Oyuncunun her hareketi bu karakter için anlamlı olmalı."),
+   cols:[{id:"ab",l:L("Ability","Yetenek")},{id:"why",l:L("Story reason","Hikâyedeki nedeni")},{id:"when",l:L("Unlocked when","Ne zaman açılır")}],
+   ex:{en:[["Double jump","Jet boots taken from a fallen guard","Level 2"],["Aim & shoot","A seed launcher that grows vine platforms","From the start"]],tr:[["Çift zıplama","Düşmüş bir muhafızdan alınan jet botlar","2. bölüm"],["Nişan al ve ateş et","Sarmaşık platformlar büyüten tohum fırlatıcı","Baştan itibaren"]]}},
+  {id:"motiv",type:"checks",other:true,label:L("What drives your player?","Oyuncunuzu ne harekete geçiriyor?"),opts:[
+    {v:"reach",l:L("Reach a destination","Bir hedefe ulaşmak")},{v:"rescue",l:L("Rescue or protect someone","Birini kurtarmak ya da korumak")},{v:"escape",l:L("Escape a threat","Bir tehditten kaçmak")},
+    {v:"discover",l:L("Discover a secret or mystery","Bir sırrı ya da gizemi çözmek")},{v:"master",l:L("Collect and master (score, collectibles, speed)","Toplamak ve ustalaşmak (puan, toplanabilirler, hız)")}],
+   ex:L("Reach a destination + escape a threat","Bir hedefe ulaşmak + bir tehditten kaçmak")},
+  {id:"mainmotiv",type:"text",label:L("Main motivation in one sentence","Tek cümlede ana motivasyon"),ex:L("Get the seed to the top before the district under you falls.","Altındaki mahalle düşmeden tohumu en tepeye çıkarmak.")}
+ ]},
+{id:"conflict",icon:"conflict",title:L("Conflict & antagonist","Çatışma ve karşı güç"),
+ intro:L("Conflict is whatever pushes back against the player. In a platformer it can be a villain, a hostile environment, time pressure, or all three.","Çatışma, oyuncuya karşı koyan her şeydir. Bir platform oyununda bu bir kötü karakter, düşmanca bir çevre, zaman baskısı ya da üçü birden olabilir."),
+ fields:[
+  {id:"central",type:"area",label:L("Central conflict in one sentence","Tek cümlede ana çatışma"),ex:L("The city is falling apart and the drones want to scrap Pip before the seed is delivered.","Şehir parçalanıyor ve dronlar tohum teslim edilmeden Pip'i hurdaya çevirmek istiyor.")},
+  {id:"opp",type:"checks",label:L("Type of opposition","Karşıtlığın türü"),opts:[
+    {v:"villain",l:L("A character or villain","Bir karakter ya da kötü")},{v:"enemies",l:L("Enemies or creatures","Düşmanlar ya da yaratıklar")},
+    {v:"env",l:L("The environment itself (collapse, flood, storm, darkness)","Çevrenin kendisi (çöküş, sel, fırtına, karanlık)")},{v:"time",l:L("Time pressure","Zaman baskısı")},{v:"inner",l:L("An inner obstacle (fear, memory, doubt)","İçsel bir engel (korku, anı, şüphe)")}],
+   ex:L("Enemies + the environment + time pressure","Düşmanlar + çevre + zaman baskısı")},
+  {id:"threats",type:"table",min:2,label:L("Antagonists and threats","Karşı güçler ve tehditler"),
+   cols:[{id:"who",l:L("Antagonist or threat","Karşı güç / tehdit")},{id:"want",l:L("What it wants","Ne istiyor")},{id:"meet",l:L("How the player meets it","Oyuncu onunla nasıl karşılaşır")},{id:"esc",l:L("How it escalates","Nasıl tırmanır")}],
+   ex:{en:[["Engine collapse","Nothing; it is a force","Falling platforms, timed sections","Districts fall faster each level"],["Rust Drone Queen","Turn the seed into scrap","Boss in the Spire","Calls more drones as her health drops"]],tr:[["Motor çöküşü","Hiçbir şey; bir doğa gücü","Düşen platformlar, süreli bölümler","Mahalleler her bölümde daha hızlı düşer"],["Pas Dronu Kraliçesi","Tohumu hurdaya çevirmek","Kule'deki boss","Canı azaldıkça daha fazla dron çağırır"]]}},
+  {id:"stakes",type:"area",label:L("Stakes","Risk"),hint:L("What happens if the player fails or gives up?","Oyuncu başaramazsa ya da vazgeçerse ne olur?"),ex:L("Aeria loses its last garden and the whole city falls into the clouds.","Aeria son bahçesini kaybeder ve tüm şehir bulutlara düşer.")},
+  {id:"resolution",type:"area",label:L("Resolution","Çözüm"),hint:L("How does the story end when the player wins? One or two sentences.","Oyuncu kazandığında hikâye nasıl biter? Bir ya da iki cümle."),ex:L("The seed takes root, vines hold the districts together, and the falling stops.","Tohum kök salar, sarmaşıklar mahalleleri bir arada tutar ve düşüş durur.")}
+ ]},
+{id:"delivery",icon:"delivery",title:L("Narrative delivery","Anlatının aktarımı"),
+ intro:L("Decide how the player learns the story. Show it through the world rather than telling it through text. Cutscenes are expensive for a 12-week project.","Oyuncunun hikâyeyi nasıl öğreneceğine karar verin. Metinle anlatmak yerine dünya üzerinden gösterin. Ara sahneler 12 haftalık bir proje için pahalıdır."),
+ fields:[
+  {id:"methods",type:"matrix",label:L("Methods you will use","Kullanacağınız yöntemler"),
+   rows:[
+    {l:L("Environmental storytelling (props, ruins, layout)","Çevresel anlatım (objeler, yıkıntılar, yerleşim)"),c:L("Cost: low–mid","Maliyet: düşük–orta")},
+    {l:L("Short text: intro card, signs, notes","Kısa metin: giriş kartı, tabelalar, notlar"),c:L("Cost: low","Maliyet: düşük")},
+    {l:L("NPC lines / dialogue boxes","NPC replikleri / diyalog kutuları"),c:L("Cost: mid","Maliyet: orta")},
+    {l:L("In-engine scripted moment (camera pan, event)","Oyun içi senaryolu an (kamera hareketi, olay)"),c:L("Cost: mid","Maliyet: orta")},
+    {l:L("Collectibles that reveal lore","Hikâyeyi açan toplanabilirler"),c:L("Cost: low–mid","Maliyet: düşük–orta")},
+    {l:L("Audio: voice, music shifts, sound cues","Ses: seslendirme, müzik geçişleri, ses ipuçları"),c:L("Cost: mid","Maliyet: orta")},
+    {l:L("Cutscene (animated or still images)","Ara sahne (animasyonlu ya da sabit görseller)"),c:L("Cost: high","Maliyet: yüksek")}],
+   cols:[{id:"use",l:L("Use it?","Kullanılacak mı?"),opts:YES_NO},{id:"where",l:L("Where / example in your game","Oyununuzda nerede / örnek")},{id:"who",l:L("Who builds it","Kim yapacak"),opts:WHO}],
+   ex:{en:[["Environmental storytelling","Yes","A broken lift and a district falling in the first minute","Artist"],["Cutscene","No","—","—"]],tr:[["Çevresel anlatım","Evet","İlk dakikada bozuk asansör ve düşen bir mahalle","Sanatçı"],["Ara sahne","Hayır","—","—"]]}},
+  {id:"opening",type:"area",label:L("Opening","Açılış"),hint:L("What does the player see and understand in the first 30 seconds?","Oyuncu ilk 30 saniyede ne görüyor ve ne anlıyor?"),ex:L("Pip wakes on the docks as the pier behind them drops into the clouds. The glowing Garden Tower is visible far above.","Pip rıhtımda uyanır; arkasındaki iskele bulutlara düşer. Parlayan Bahçe Kulesi çok yukarıda görünür.")},
+  {id:"ending",type:"area",label:L("Ending","Kapanış"),hint:L("What does the player see when they finish?","Oyuncu oyunu bitirince ne görüyor?"),ex:L("The seed is planted; vines spread down the city in one camera move, and the clouds clear.","Tohum ekilir; tek bir kamera hareketiyle sarmaşıklar şehir boyunca aşağı yayılır ve bulutlar dağılır.")}
+ ]},
+{id:"bridge",icon:"bridge",title:L("From story to gameplay","Hikâyeden oynanışa"),
+ intro:L("The most important section. Each story element must become something the player does, a place they move through, or a rule they play with.","En önemli bölüm. Her hikâye öğesi oyuncunun yaptığı bir şeye, içinden geçtiği bir mekâna ya da oynadığı bir kurala dönüşmeli."),
+ visual:"bridge",
+ fields:[
+  {id:"objectives",type:"table",min:3,label:L("Story → objectives","Hikâye → hedefler"),hint:L("What the player is asked to do, and how the game checks it.","Oyuncudan ne yapması isteniyor ve oyun bunu nasıl kontrol ediyor?"),
+   cols:[{id:"moment",l:L("Story moment","Hikâye anı")},{id:"obj",l:L("Player objective","Oyuncu hedefi")},{id:"shown",l:L("How it is shown on screen","Ekranda nasıl gösterilir")},{id:"done",l:L("Completion condition","Tamamlanma koşulu")}],
+   ex:{en:[["The bridge has collapsed","Reach the far tower","The tower glows in the distance","Enter the trigger zone at its door"]],tr:[["Köprü çöktü","Uzaktaki kuleye ulaş","Kule uzakta parlıyor","Kapısındaki tetik alanına gir"]]}},
+  {id:"spaces",type:"table",min:2,label:L("Story → spaces","Hikâye → mekânlar"),hint:L("How the world shapes the levels. Use the places from World building.","Dünya bölümleri nasıl şekillendiriyor? Dünya kurgusundaki mekânları kullanın."),
+   cols:[{id:"place",l:L("Place","Mekân")},{id:"layout",l:L("Layout idea","Yerleşim fikri")},{id:"says",l:L("What the space says about the story","Mekân hikâye hakkında ne söylüyor")},{id:"mark",l:L("Landmark that guides the player","Oyuncuyu yönlendiren işaret")}],
+   ex:{en:[["Lower Docks","Vertical climb","The city is rotting from below","The Garden Tower, always visible above"]],tr:[["Alt Rıhtımlar","Dikey tırmanış","Şehir aşağıdan çürüyor","Her zaman yukarıda görünen Bahçe Kulesi"]]}},
+  {id:"mechs",type:"table",min:3,label:L("Story → mechanics","Hikâye → mekanikler"),hint:L("Connect the story to your core loop and this week's aiming/shooting prototype.","Hikâyeyi çekirdek döngünüze ve bu haftaki nişan/atış prototipinize bağlayın."),
+   cols:[{id:"mech",l:L("Mechanic","Mekanik")},{id:"why",l:L("Story reason","Hikâyedeki nedeni")},{id:"target",l:L("What the player aims or shoots at","Oyuncu neye nişan alıyor / ateş ediyor")},{id:"fb",l:L("Feedback (visual / sound)","Geri bildirim (görsel / ses)")}],
+   ex:{en:[["Aim & shoot","The seed launcher grows platforms","Soil patches, switches, drones","Vine sprout animation and a soft pop"]],tr:[["Nişan al ve ateş et","Tohum fırlatıcı platform büyütür","Toprak parçaları, şalterler, dronlar","Sarmaşık filizlenme animasyonu ve hafif bir patlama sesi"]]}},
+  {id:"consistency",type:"area",label:L("Consistency check","Tutarlılık kontrolü"),hint:L("Is there a mechanic with no story reason, or a story element with no gameplay? List them and decide: cut, change or justify.","Hikâye nedeni olmayan bir mekanik ya da oynanışa dönüşmeyen bir hikâye öğesi var mı? Listeleyin ve karar verin: çıkar, değiştir ya da gerekçelendir."),
+   ex:L("The Builders' history never shows up in play. Decision: add 3 Builder murals as collectibles.","Kurucuların geçmişi oyunda hiç görünmüyor. Karar: toplanabilir olarak 3 Kurucu duvar resmi eklemek.")}
+ ]},
+{id:"beats",icon:"beats",title:L("Narrative beats & level sketch","Anlatı vuruşları ve bölüm eskizi"),
+ intro:L("Walk through the whole game as the player experiences it, from start to finish. Rate each beat's intensity to see the shape of your game.","Oyunun tamamını oyuncunun deneyimlediği sırayla, baştan sona yürüyün. Oyununuzun şeklini görmek için her vuruşun yoğunluğunu puanlayın."),
+ visual:"curve",
+ fields:[
+  {id:"beatrows",type:"matrix",label:L("Beat table","Vuruş tablosu"),
+   rows:[{l:L("1 · Opening / hook","1 · Açılış / kanca")},{l:L("2 · First challenge","2 · İlk zorluk")},{l:L("3 · Rising tension","3 · Yükselen gerilim")},{l:L("4 · Twist / new information","4 · Kırılma / yeni bilgi")},{l:L("5 · Hardest moment / climax","5 · En zor an / doruk")},{l:L("6 · Resolution","6 · Çözüm")}],
+   cols:[{id:"place",l:L("Place","Mekân")},{id:"does",l:L("What the player does","Oyuncu ne yapıyor")},{id:"feels",l:L("Learns or feels","Ne öğreniyor / hissediyor")},{id:"newm",l:L("New mechanic or challenge","Yeni mekanik ya da zorluk")},{id:"int",l:L("Intensity 1–5","Yoğunluk 1–5"),opts:INT}],
+   ex:{en:[["1","Lower Docks","Runs and jumps","Curious","Movement, jump","1"],["2","Broken Bridge","Crosses falling platforms","Careful","Timed platforms","2"],["3","Drone Yard","Shoots drones for the first time","Under pressure","Aim & shoot","3"],["4","Engine Hall","Learns the engine cannot be fixed","Shocked","Gravity shift","3"],["5","Collapsing Spire","Climbs while the district falls","Urgent","All skills together","5"],["6","Garden Tower","Plants the seed","Relieved, proud","—","1"]],
+       tr:[["1","Alt Rıhtımlar","Koşar ve zıplar","Meraklı","Hareket, zıplama","1"],["2","Yıkık Köprü","Düşen platformlardan geçer","Dikkatli","Süreli platformlar","2"],["3","Dron Avlusu","İlk kez dronlara ateş eder","Baskı altında","Nişan al ve ateş et","3"],["4","Motor Salonu","Motorun onarılamayacağını öğrenir","Şaşkın","Yerçekimi değişimi","3"],["5","Çöken Kule","Mahalle düşerken tırmanır","Acil","Tüm yetenekler bir arada","5"],["6","Bahçe Kulesi","Tohumu eker","Rahatlamış, gururlu","—","1"]]}},
+  {id:"sketch",type:"images",max:2,label:L("Level sketch","Bölüm eskizi"),hint:L("Photo of a paper sketch, top-down or side view. Mark the start, the goal, landmarks, the beat numbers above, and where aiming/shooting is used.","Kâğıt eskizin fotoğrafı, üstten ya da yandan görünüm. Başlangıcı, hedefi, işaret noktalarını, yukarıdaki vuruş numaralarını ve nişan/atışın kullanıldığı yerleri işaretleyin.")}
+ ]},
+{id:"scope",icon:"scope",title:L("Scope check","Kapsam kontrolü"),
+ intro:L("Be honest about what three people can build by Week 12. Mark what is essential and what can go.","Üç kişinin 12. haftaya kadar neler yapabileceği konusunda dürüst olun. Neyin vazgeçilmez, neyin çıkarılabilir olduğunu işaretleyin."),
+ fields:[
+  {id:"scopet",type:"table",min:4,label:L("Scope table","Kapsam tablosu"),
+   cols:[{id:"el",l:L("Element","Öğe")},{id:"prio",l:L("Priority","Öncelik"),opts:PRIO}],
+   ex:{en:[["3 levels","Must have"],["Boss fight","Nice to have"],["NPC dialogue","Cut if late"]],tr:[["3 bölüm","Olmazsa olmaz"],["Boss savaşı","Olsa iyi olur"],["NPC diyalogları","Geç kalırsak çıkar"]]}},
+  {id:"checklist",type:"checks",label:L("Before you submit","Teslim etmeden önce"),opts:[
+    {v:"c1",l:L("The logline is one sentence and the whole team agrees on it","Tek cümlelik özet gerçekten tek cümle ve tüm ekip üzerinde anlaştı")},
+    {v:"c2",l:L("Every world rule has a gameplay effect","Dünyanın her kuralının oynanışta bir etkisi var")},
+    {v:"c3",l:L("Every ability has a story reason","Her yeteneğin hikâyede bir nedeni var")},
+    {v:"c4",l:L("Objectives, spaces and mechanics tables are filled","Hedefler, mekânlar ve mekanikler tabloları dolu")},
+    {v:"c5",l:L("Aiming/shooting has a clear story purpose and target","Nişan/atışın net bir hikâye amacı ve hedefi var")},
+    {v:"c6",l:L("The beat table covers the game from start to finish","Vuruş tablosu oyunu baştan sona kapsıyor")},
+    {v:"c7",l:L("At least one level sketch is added","En az bir bölüm eskizi eklendi")},
+    {v:"c8",l:L("The brief matches our Week 2 Core Loop and Mini GDD","Özet, 2. haftadaki Çekirdek Döngü ve Mini GDD ile uyumlu")},
+    {v:"c9",l:L("Each team member reviewed it from their role","Her ekip üyesi kendi rolünden kontrol etti")}]}
+ ]}
+];
+const REVIEW_STEP=SECTIONS.length;
+
+/* ---------- state ---------- */
+let state=null, groupKey="", step=0, saveTimer=null, storageOk=true;
+const norm=s=>s.trim().toLocaleLowerCase("tr").replace(/\s+/g," ");
+const keyFor=g=>"nb-draft:"+norm(g);
+function defaults(f){
+  switch(f.type){
+    case "table": return Array.from({length:f.min||1},()=>f.cols.map(()=>""));
+    case "matrix": return f.rows.map(()=>f.cols.map(()=>""));
+    case "list": return Array.from({length:f.min||1},()=>"");
+    case "chips": case "images": return [];
+    case "checks": return {sel:[],other:""};
+    default: return "";
+  }
+}
+function fresh(group){
+  const d={v:1,data:{}};
+  SECTIONS.forEach(s=>s.fields.forEach(f=>d.data[f.id]=defaults(f)));
+  d.data.group=group; return d;
+}
+function sanitize(d){
+  const out=fresh(d?.data?.group||"");
+  if(!d||typeof d!=="object"||!d.data) return out;
+  SECTIONS.forEach(s=>s.fields.forEach(f=>{
+    const v=d.data[f.id], def=out.data[f.id];
+    if(v==null) return;
+    if(typeof def==="string") out.data[f.id]=typeof v==="string"?v:"";
+    else if(f.type==="checks") out.data[f.id]={sel:Array.isArray(v.sel)?v.sel.filter(x=>typeof x==="string"):[],other:typeof v.other==="string"?v.other:""};
+    else if(f.type==="table"||f.type==="matrix"){
+      if(!Array.isArray(v)) return;
+      let rows=v.filter(Array.isArray).map(r=>f.cols.map((_,i)=>typeof r[i]==="string"?r[i]:""));
+      if(f.type==="matrix"){ rows=f.rows.map((_,i)=>rows[i]||f.cols.map(()=>"")); }
+      else if(!rows.length) rows=def;
+      out.data[f.id]=rows;
+    }
+    else if(Array.isArray(v)) out.data[f.id]=v.filter(x=>typeof x==="string").slice(0,f.max||50);
+  }));
+  return out;
+}
+function groups(){try{return JSON.parse(store.get("nb-groups")||"[]").filter(x=>typeof x==="string")}catch(e){return []}}
+function rememberGroup(g){const list=groups().filter(x=>norm(x)!==norm(g));list.unshift(g);store.set("nb-groups",JSON.stringify(list.slice(0,8)))}
+function openGroup(g){
+  groupKey=keyFor(g);
+  let d=null; try{d=JSON.parse(store.get(groupKey)||"null")}catch(e){d=null}
+  state=d?sanitize(d):fresh(g);
+  state.data.group=g.trim();
+  rememberGroup(g.trim());
+  const st=parseInt(store.get(groupKey+":step")||"0",10);
+  step=Number.isFinite(st)&&st>=0&&st<=REVIEW_STEP?st:0;
+  document.getElementById("gate").hidden=true;
+  document.getElementById("app").hidden=false;
+  saveNow(); renderAll();
+}
+function saveNow(){
+  if(!state) return;
+  storageOk=store.set(groupKey,JSON.stringify(state));
+  store.set(groupKey+":step",String(step));
+  setStatus(storageOk?t(U.saved):t(U.notSaving),!storageOk);
+}
+function changed(){
+  setStatus(t(U.saving));
+  clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,450);
+  renderRail();
+}
+function setStatus(txt,warn){const el=document.getElementById("status");if(el){el.textContent=txt;el.classList.toggle("warn",!!warn)}}
+
+/* ---------- helpers ---------- */
+function h(tag,attrs,...kids){
+  const el=document.createElement(tag);
+  if(attrs) for(const k in attrs){
+    const v=attrs[k]; if(v==null||v===false) continue;
+    if(k.startsWith("on")) el.addEventListener(k.slice(2),v);
+    else if(k==="class") el.className=v;
+    else if(k==="html") el.innerHTML=v;
+    else if(k==="value") el.value=v;
+    else el.setAttribute(k,v===true?"":v);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; el.append(c instanceof Node?c:document.createTextNode(String(c))) }
+  return el;
+}
+function toast(msg){
+  document.querySelectorAll(".toast").forEach(x=>x.remove());
+  const el=h("div",{class:"toast",role:"status"},msg); document.body.append(el);
+  setTimeout(()=>el.remove(),3800);
+}
+const filledStr=s=>typeof s==="string"&&s.trim()!=="";
+function isFilled(f,v){
+  switch(f.type){
+    case "table": case "matrix": return v.some(r=>r.some(filledStr));
+    case "list": return v.some(filledStr);
+    case "chips": case "images": return v.length>0;
+    case "checks": return v.sel.length>0||filledStr(v.other);
+    default: return filledStr(v);
+  }
+}
+function secProgress(i){const s=SECTIONS[i];const n=s.fields.filter(f=>isFilled(f,state.data[f.id])).length;return n/s.fields.length}
+function optLabel(opts,v){const o=opts.find(o=>o.v===v);return o?t(o.l):""}
+const fid=(...p)=>"f-"+p.join("-");
+
+/* ---------- top bar & rail ---------- */
+function renderTop(){
+  const tb=document.getElementById("topbar"); tb.innerHTML="";
+  tb.append(
+    h("div",{class:"brand"},h("b",null,t(U.app)),h("span",null,t(U.course))),
+    h("div",{class:"tools"},
+      h("span",{class:"grouptag"},h("span",{class:"mono"},t(U.group)),h("b",{title:state.data.group},state.data.group)),
+      h("button",{class:"chipbtn",type:"button",onclick:toGate},t(U.change)),
+      h("button",{class:"chipbtn",type:"button","aria-pressed":String(showEx),onclick:()=>{showEx=!showEx;store.set("nb-ex",showEx?"1":"0");renderAll()}},t(U.examples)),
+      langSeg(),
+      h("span",{class:"status",id:"status","aria-live":"polite"},storageOk?t(U.saved):t(U.notSaving))
+    ));
+}
+function langSeg(){
+  return h("div",{class:"seg",role:"group","aria-label":"Language / Dil"},
+    ["en","tr"].map(l=>h("button",{type:"button","aria-pressed":String(lang===l),onclick:()=>{lang=l;store.set("nb-lang",l);document.documentElement.lang=l;state?renderAll():renderGate()}},l.toUpperCase())));
+}
+function renderRail(){
+  const r=document.getElementById("rail"); r.innerHTML="";
+  const total=SECTIONS.reduce((a,_,i)=>a+secProgress(i),0)/SECTIONS.length;
+  r.append(h("div",{class:"mono",style:"padding:0 10px;color:var(--muted)"},t(U.completion)+" · "+Math.round(total*100)+"%"),
+    h("div",{class:"meter"},h("i",{style:"width:"+Math.round(total*100)+"%"})));
+  SECTIONS.forEach((s,i)=>{
+    const p=secProgress(i);
+    r.append(h("button",{type:"button","aria-current":i===step?"step":null,onclick:()=>go(i)},
+      h("span",{class:"no"},String(i).padStart(2,"0")),
+      h("span",{class:"nm"},t(s.title)),
+      h("span",{class:"dot "+(p>=1?"done":p>0?"part":"")})));
+  });
+  r.append(h("button",{type:"button","aria-current":step===REVIEW_STEP?"step":null,onclick:()=>go(REVIEW_STEP)},
+    h("span",{class:"no",html:svgIcon("review").replace("<svg","<svg width=\"16\" height=\"16\"")}),
+    h("span",{class:"nm"},t(U.review)),h("span")));
+}
+function go(i){step=i;store.set(groupKey+":step",String(step));renderRail();renderMain();window.scrollTo({top:0,behavior:"smooth"})}
+function renderAll(){document.documentElement.lang=lang;renderTop();renderRail();renderMain()}
+
+/* ---------- fields ---------- */
+function exampleBox(f){
+  if(!showEx||!f.ex) return null;
+  let body;
+  if(f.type==="table"||f.type==="matrix"){
+    const rows=f.ex[lang]||f.ex.en;
+    const head=f.type==="matrix"?[""].concat(f.cols.map(c=>t(c.l))):f.cols.map(c=>t(c.l));
+    body=h("div",{class:"exwrap"},h("table",null,h("tr",null,head.map(x=>h("th",null,x))),rows.map(r=>h("tr",null,r.map(c=>h("td",null,c))))));
+  } else if(f.type==="list"){
+    body=h("ul",null,(f.ex[lang]||f.ex.en).map(x=>h("li",null,x)));
+  } else body=h("div",null,t(f.ex));
+  return h("div",{class:"ex"},h("span",{class:"tag"},t(U.example)),body);
+}
+function input(id,val,on,ph){return h("input",{type:"text",id,value:val,placeholder:ph||null,oninput:e=>on(e.target.value)})}
+function select(id,opts,val,on){
+  return h("select",{id,onchange:e=>on(e.target.value)},h("option",{value:""},"—"),opts.map(o=>{const op=h("option",{value:o.v},t(o.l));if(o.v===val)op.selected=true;return op}));
+}
+function fieldEl(f){
+  const d=state.data; const id=fid(f.id);
+  const wrap=h("div",{class:"field"});
+  const labelTag=["text","area","select"].includes(f.type)?h("label",{for:id},t(f.label)):h("div",{class:"lbl",id:id+"-l"},t(f.label));
+  wrap.append(labelTag);
+  if(f.hint) wrap.append(h("p",{class:"hint"},t(f.hint)));
+  const ex=exampleBox(f); if(ex) wrap.append(ex);
+  const set=v=>{d[f.id]=v;changed()};
+  switch(f.type){
+    case "text":
+      wrap.append(input(id,d[f.id],v=>{set(v);if(f.id==="group"){renderTopGroup()}}));break;
+    case "area":
+      wrap.append(h("textarea",{id,value:d[f.id],oninput:e=>set(e.target.value)}));break;
+    case "select":
+      wrap.append(select(id,f.opts,d[f.id],set));break;
+    case "chips":{
+      const box=h("div",{class:"chips",role:"group","aria-labelledby":id+"-l"});
+      f.opts.forEach(o=>{
+        const cb=h("input",{type:"checkbox",id:fid(f.id,o.v),onchange:e=>{
+          let a=d[f.id].filter(x=>x!==o.v);
+          if(e.target.checked){ if(f.max&&a.length>=f.max){e.target.checked=false;toast(lang==="tr"?"En fazla "+f.max+" seçim":"Pick up to "+f.max);return} a.push(o.v)}
+          set(a);}});
+        cb.checked=d[f.id].includes(o.v);
+        box.append(h("label",null,cb,t(o.l)));
+      });
+      wrap.append(box);break;}
+    case "checks":{
+      const box=h("div",{class:"checks",role:"group","aria-labelledby":id+"-l"});
+      f.opts.forEach(o=>{
+        const cb=h("input",{type:"checkbox",id:fid(f.id,o.v),onchange:e=>{const v=d[f.id];v.sel=v.sel.filter(x=>x!==o.v);if(e.target.checked)v.sel.push(o.v);changed()}});
+        cb.checked=d[f.id].sel.includes(o.v);
+        box.append(h("label",null,cb,h("span",null,t(o.l))));
+      });
+      if(f.other) box.append(h("div",{class:"cell"},h("span",null,t(U.other)),input(fid(f.id,"other"),d[f.id].other,v=>{d[f.id].other=v;changed()})));
+      wrap.append(box);break;}
+    case "list":{
+      const box=h("div",{class:"rows"});
+      const draw=()=>{box.innerHTML="";
+        d[f.id].forEach((v,i)=>box.append(h("div",{style:"display:flex;gap:8px;align-items:center"},
+          h("span",{class:"mono",style:"width:20px;color:var(--muted)"},String(i+1)),
+          input(fid(f.id,i),v,nv=>{d[f.id][i]=nv;changed()}),
+          d[f.id].length>(f.min||1)?h("button",{class:"btn ghost",type:"button","aria-label":t(U.remove)+" "+(i+1),onclick:()=>{d[f.id].splice(i,1);changed();draw()}},"✕"):null)));
+        box.append(h("div",null,h("button",{class:"btn",type:"button",onclick:()=>{d[f.id].push("");changed();draw();box.querySelectorAll("input")[d[f.id].length-1]?.focus()}},"+ "+t(U.addItem))));
+      };
+      draw(); wrap.append(box);break;}
+    case "table": case "matrix":{
+      const box=h("div",{class:"rows"});
+      const draw=()=>{box.innerHTML="";
+        d[f.id].forEach((row,ri)=>{
+          const cells=h("div",{class:"cells"});
+          f.cols.forEach((c,ci)=>{
+            const cid=fid(f.id,ri,c.id);
+            const on=v=>{d[f.id][ri][ci]=v;changed();if(f.id==="beatrows"&&c.id==="int")drawCurve()};
+            cells.append(h("div",{class:"cell"},h("span",null,h("label",{for:cid},t(c.l))),c.opts?select(cid,c.opts,row[ci],on):input(cid,row[ci],on)));
+          });
+          const head=f.type==="matrix"?h("div",{class:"fixedlbl"},t(f.rows[ri].l),f.rows[ri].c?h("small",null,t(f.rows[ri].c)):null):null;
+          const body=h("div",{style:"display:flex;flex-direction:column;gap:8px;min-width:0"},head,cells);
+          const r=h("div",{class:"row"},h("span",{class:"idx"},f.type==="matrix"?"":String(ri+1)),body);
+          if(f.type==="table"&&d[f.id].length>(f.min||1)) r.append(h("div",{class:"rowfoot"},h("button",{class:"btn ghost",type:"button",onclick:()=>{d[f.id].splice(ri,1);changed();draw()}},t(U.remove))));
+          box.append(r);
+        });
+        if(f.type==="table") box.append(h("div",null,h("button",{class:"btn",type:"button",onclick:()=>{d[f.id].push(f.cols.map(()=>""));changed();draw()}},"+ "+t(U.addRow))));
+      };
+      draw(); wrap.append(box);break;}
+    case "images":{
+      const box=h("div",{class:"imgs"});
+      const draw=()=>{box.innerHTML="";
+        d[f.id].forEach((src,i)=>box.append(h("figure",null,h("img",{src,alt:t(f.label)+" "+(i+1)}),h("button",{type:"button",onclick:()=>{d[f.id].splice(i,1);changed();draw()}},t(U.remove)))));
+        if(d[f.id].length<(f.max||4)){
+          const fi=h("input",{type:"file",accept:"image/png,image/jpeg,image/webp",class:"sr",id:fid(f.id,"file"),onchange:async e=>{
+            const file=e.target.files[0]; if(!file) return;
+            try{const url=await shrink(file);d[f.id].push(url);changed();draw()}catch(err){toast(lang==="tr"?"Görsel okunamadı.":"That image could not be read.")}
+          }});
+          box.append(h("label",{class:"drop",for:fid(f.id,"file")},fi,h("span",null,"+ "+t(U.addImg),h("br"),h("small",null,t(U.imgHint)))));
+        }
+      };
+      draw(); wrap.append(box);break;}
+  }
+  return wrap;
+}
+function renderTopGroup(){const b=document.querySelector(".grouptag b");if(b){b.textContent=state.data.group;b.title=state.data.group}}
+function shrink(file){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=rej;
+    fr.onload=()=>{const img=new Image();img.onerror=rej;img.onload=()=>{
+      const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement("canvas");c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+      const x=c.getContext("2d");x.fillStyle="#ffffff";x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+      res(c.toDataURL("image/jpeg",0.74));};img.src=fr.result};
+    fr.readAsDataURL(file);
+  });
+}
+
+/* ---------- visuals ---------- */
+function bridgeSVG(ink,muted,accent,soft,surface){
+  const T={story:L("STORY","HİKÂYE"),o:L("Objectives","Hedefler"),od:L("what the player does","oyuncunun yaptığı"),s:L("Spaces","Mekânlar"),sd:L("where they move","nerede ilerlediği"),m:L("Mechanics","Mekanikler"),md:L("rules they play with","oynadığı kurallar"),src:L("premise · world · hero · conflict","öncül · dünya · kahraman · çatışma")};
+  const box=(x,y,a,b)=>`<rect x="${x}" y="${y}" width="190" height="58" rx="10" fill="${surface}" stroke="${accent}" stroke-width="1.5"/><text x="${x+16}" y="${y+25}" font-size="16" font-weight="700" fill="${ink}">${t(a)}</text><text x="${x+16}" y="${y+44}" font-size="12.5" fill="${muted}">${t(b)}</text>`;
+  return `<svg viewBox="0 0 640 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${t(T.story)} → ${t(T.o)}, ${t(T.s)}, ${t(T.m)}">
+  <rect x="10" y="70" width="210" height="90" rx="12" fill="${soft}" stroke="${accent}" stroke-width="1.5"/>
+  <text x="30" y="106" font-size="22" font-weight="800" fill="${accent}" letter-spacing="2">${t(T.story)}</text>
+  <text x="30" y="132" font-size="12.5" fill="${muted}">${t(T.src)}</text>
+  <path d="M220 115 C 330 115 300 40 430 40 M220 115 L 430 115 M220 115 C 330 115 300 190 430 190" fill="none" stroke="${accent}" stroke-width="2"/>
+  <path d="M424 34 l10 6 -10 6Z M424 109 l10 6 -10 6Z M424 184 l10 6 -10 6Z" fill="${accent}"/>
+  ${box(436,11,T.o,T.od)}${box(436,86,T.s,T.sd)}${box(436,161,T.m,T.md)}</svg>`;
+}
+function curveSVG(rows,ink,muted,accent,line,labels){
+  const W=640,H=200,l=40,r=20,top=18,bot=40,iw=W-l-r,ih=H-top-bot;
+  const xs=i=>l+iw*(i/5), ys=v=>top+ih*(1-(v-1)/4);
+  let g="";
+  for(let v=1;v<=5;v++) g+=`<line x1="${l}" x2="${W-r}" y1="${ys(v)}" y2="${ys(v)}" stroke="${line}" stroke-width="1"/><text x="${l-12}" y="${ys(v)+4}" font-size="11" text-anchor="end" fill="${muted}">${v}</text>`;
+  for(let i=0;i<6;i++) g+=`<text x="${xs(i)}" y="${H-18}" font-size="12" text-anchor="middle" fill="${muted}">${labels?labels[i]:i+1}</text>`;
+  const pts=rows.map((r,i)=>{const v=parseInt(r,10);return v>=1&&v<=5?[xs(i),ys(v)]:null});
+  const valid=pts.filter(Boolean);
+  let path="";
+  if(valid.length>1){
+    path=`<path d="M${valid[0][0]} ${top+ih} ${valid.map(p=>"L"+p[0]+" "+p[1]).join(" ")} L${valid[valid.length-1][0]} ${top+ih}Z" fill="${accent}" fill-opacity="0.12"/>`+
+         `<polyline points="${valid.map(p=>p.join(",")).join(" ")}" fill="none" stroke="${accent}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  }
+  const dots=valid.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${accent}"/>`).join("");
+  const emptyMsg=valid.length?"":`<text x="${W/2}" y="${top+ih/2}" font-size="13" text-anchor="middle" fill="${muted}">${t(U.curve)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${t(U.intensity)}">${g}${path}${dots}${emptyMsg}<text x="${l}" y="${H-2}" font-size="11" fill="${muted}" font-family="monospace">${t(U.intensity).toUpperCase()} · BEAT 1→6</text></svg>`;
+}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function drawCurve(){
+  const el=document.getElementById("curve"); if(!el) return;
+  const rows=state.data.beatrows.map(r=>r[4]);
+  el.innerHTML=curveSVG(rows,css("--ink"),css("--muted"),css("--accent"),css("--line"));
+}
+
+/* ---------- main ---------- */
+function renderMain(){
+  const m=document.getElementById("main"); m.innerHTML="";
+  if(step===REVIEW_STEP){renderReview(m);return}
+  const s=SECTIONS[step];
+  m.append(h("div",{class:"sec-head"},h("div",{class:"sec-ic",html:svgIcon(s.icon)}),
+    h("div",null,h("div",{class:"mono",style:"color:var(--muted)"},(lang==="tr"?"Bölüm ":"Section ")+step+" / "+(SECTIONS.length-1)),h("h1",null,t(s.title)),h("p",null,t(s.intro)))));
+  if(s.visual==="bridge"){
+    const fig=h("figure",{class:"visual",style:"margin:0"});
+    fig.innerHTML=bridgeSVG(css("--ink"),css("--muted"),css("--accent"),css("--accent-soft"),css("--surface"));
+    fig.append(h("figcaption",null,lang==="tr"?"Önceki bölümlerde yazdığınız her şey bu üç kutudan birine düşmeli.":"Everything you wrote in the earlier sections should land in one of these three boxes."));
+    m.append(fig);
+  }
+  if(s.visual==="curve"){
+    const fig=h("figure",{class:"visual",style:"margin:0"},h("div",{id:"curve"}),
+      h("figcaption",null,lang==="tr"?"İyi bir platform oyunu genellikle yükselir, kısa nefes aldırır ve doruğa çıkar. Düz bir çizgi, tekdüze bir deneyim demektir.":"A good platformer usually rises, gives a short breather, then peaks. A flat line means a flat experience."));
+    m.append(fig);
+  }
+  const card=h("div",{class:"card"});
+  let halfBuf=[];
+  const flush=()=>{if(halfBuf.length){card.append(h("div",{class:"grid2"},halfBuf));halfBuf=[]}};
+  s.fields.forEach(f=>{const el=fieldEl(f); if(f.half) halfBuf.push(el); else {flush();card.append(el)}});
+  flush();
+  m.append(card);
+  if(s.visual==="curve") drawCurve();
+  m.append(h("div",{class:"nav"},
+    step>0?h("button",{class:"btn",type:"button",onclick:()=>go(step-1)},"← "+t(U.back)):h("span"),
+    h("button",{class:"btn primary",type:"button",onclick:()=>go(step+1)},(step===SECTIONS.length-1?t(U.review):t(U.next))+" →")));
+}
+
+/* ---------- review & PDF ---------- */
+function renderReview(m){
+  m.append(h("div",{class:"sec-head"},h("div",{class:"sec-ic",html:svgIcon("review")}),h("div",null,h("h1",null,t(U.review)),h("p",null,t(U.reviewIntro)))));
+  if(!storageOk) m.append(h("p",{class:"note warn"},t(U.storageWarn)));
+  const prog=h("div",{class:"prog"});
+  SECTIONS.forEach((s,i)=>{const p=Math.round(secProgress(i)*100);
+    prog.append(h("button",{type:"button",onclick:()=>go(i)},h("span",null,t(s.title)),h("span",{class:"pc"},p+"%"),h("span",{class:"bar"},h("i",{style:"width:"+p+"%"}))))});
+  m.append(prog);
+  const dlBtn=h("button",{class:"btn primary",type:"button",id:"dlbtn",onclick:downloadPdf},t(U.download));
+  m.append(h("div",{class:"card",style:"gap:14px"},
+    h("div",{class:"exportbar"},dlBtn,
+      h("button",{class:"btn",type:"button",onclick:saveJson},t(U.saveJson)),
+      h("button",{class:"btn",type:"button",onclick:()=>document.getElementById("jsonIn").click()},t(U.loadJson))),
+    h("p",{class:"hint",style:"margin:0"},t(U.jsonNote)),
+    h("p",{class:"note",style:"margin:0"},t(U.bb))));
+  m.append(h("div",{class:"mono",style:"color:var(--muted)"},t(U.preview)));
+  m.append(h("div",{class:"paperwrap"},buildPaper()));
+}
+function pval(f,v){
+  const E=()=>h("p",{class:"empty"},t(U.empty));
+  if(!isFilled(f,v)) return E();
+  switch(f.type){
+    case "select": return h("p",null,optLabel(f.opts,v));
+    case "chips": return h("p",null,v.map(x=>optLabel(f.opts,x)).join(", "));
+    case "checks": {const items=v.sel.map(x=>optLabel(f.opts,x)).filter(Boolean);if(filledStr(v.other))items.push(t(U.other)+": "+v.other);
+      return f.id==="checklist"?h("ul",null,f.opts.map(o=>h("li",null,(v.sel.includes(o.v)?"☑ ":"☐ ")+t(o.l)))):h("p",null,items.join(" · "));}
+    case "list": return h("ul",null,v.filter(filledStr).map(x=>h("li",null,x)));
+    case "images": return h("div",{class:"pimgs"},v.map(src=>h("img",{src,alt:""})));
+    case "table": {const rows=v.filter(r=>r.some(filledStr));
+      return h("table",null,h("tr",null,f.cols.map(c=>h("th",null,t(c.l)))),rows.map(r=>h("tr",null,r.map((c,i)=>h("td",null,f.cols[i].opts?optLabel(f.cols[i].opts,c):c)))));}
+    case "matrix": {
+      const rows=v.map((r,i)=>[i,r]).filter(([,r])=>r.some(filledStr));
+      return h("table",null,h("tr",null,h("th",null,""),f.cols.map(c=>h("th",null,t(c.l)))),rows.map(([i,r])=>h("tr",null,h("td",null,h("b",null,t(f.rows[i].l))),r.map((c,ci)=>h("td",null,f.cols[ci].opts?optLabel(f.cols[ci].opts,c):c)))));}
+    default: return h("p",{style:"white-space:pre-wrap"},v);
+  }
+}
+function buildPaper(){
+  const d=state.data;
+  const today=new Date().toLocaleDateString(lang==="tr"?"tr-TR":"en-GB");
+  const p=h("div",{id:"paper"});
+  p.append(h("div",{class:"kick"},t(U.course)),h("h1",null,t(U.app)),
+    h("div",{class:"pmeta"},
+      h("div",null,h("span",null,t(U.group)+": "),h("b",null,d.group||"—")),
+      h("div",null,h("span",null,t(U.gameTitle)+": "),h("b",null,d.title||"—")),
+      h("div",null,h("span",null,t(U.members)+": "),[d.designer&&(lang==="tr"?"Tasarım: ":"Design: ")+d.designer,d.developer&&(lang==="tr"?"Geliştirme: ":"Dev: ")+d.developer,d.artist&&(lang==="tr"?"Sanat: ":"Art: ")+d.artist].filter(Boolean).join(" · ")||"—"),
+      h("div",null,h("span",null,t(U.date)+": "),today)));
+  SECTIONS.slice(1).forEach((s,i)=>{
+    p.append(h("h2",null,(i+1)+". "+t(s.title)));
+    if(s.visual==="curve"){
+      const c=h("div",{style:"margin:4px 0 6px"}); c.innerHTML=curveSVG(d.beatrows.map(r=>r[4]),"#1A1F24","#6B7480","#0B7A75","#D7DDE2");
+      if(d.beatrows.some(r=>filledStr(r[4]))) p.append(c);
+    }
+    let pair=[];
+    const flushPair=()=>{if(pair.length){p.append(h("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:0 18px"},pair));pair=[]}};
+    s.fields.forEach(f=>{
+      if(f.id==="moodlink"&&!filledStr(d.moodlink)) return;
+      const blk=h("div",{class:"pb-avoid"},h("h3",null,t(f.label)),pval(f,d[f.id]));
+      if(f.half) pair.push(blk); else {flushPair();p.append(blk)}
+    });
+    flushPair();
+  });
+  p.append(h("div",{class:"pfoot"},h("span",null,(d.group||"")+(d.title?" · "+d.title:"")),h("span",null,t(U.course))));
+  return p;
+}
+const translit=s=>s.replace(/[çÇğĞıİöÖşŞüÜ]/g,c=>({ç:"c",Ç:"C",ğ:"g",Ğ:"G",ı:"i",İ:"I",ö:"o",Ö:"O",ş:"s",Ş:"S",ü:"u",Ü:"U"}[c]));
+const slug=s=>translit(s||"group").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")||"group";
+const stamp=()=>new Date().toISOString().slice(0,10);
+async function getDownloads(){
+  if(!window.claude||typeof window.claude.use!=="function") return {inViewer:false,dl:null};
+  try{return {inViewer:true,dl:await window.claude.use("downloads")}}catch(e){return {inViewer:true,dl:null}}
+}
+async function offerFile(filename,data){
+  const {inViewer,dl}=await getDownloads();
+  if(dl){
+    try{await dl.save({filename,data});return "saved"}
+    catch(e){ if(e&&e.code==="declined") return "declined"; if(e&&e.code==="rate_limited") return "busy"; throw e }
+  }
+  if(inViewer) return "none";
+  const blob=data instanceof Blob?data:new Blob([data],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=h("a",{href:url,download:filename}); document.body.append(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+  return "saved";
+}
+async function downloadPdf(){
+  const btn=document.getElementById("dlbtn"); const el=document.getElementById("paper");
+  if(!el||typeof html2pdf==="undefined"){toast(t(U.dlFail));return}
+  btn.disabled=true; btn.textContent=t(U.making);
+  try{
+    if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+    const src=buildPaper(); src.removeAttribute("id"); src.id="paper"; src.style.margin="0";
+    const y=window.scrollY; window.scrollTo(0,0);
+    const blob=await html2pdf().set({
+      margin:[10,10,12,10],
+      image:{type:"jpeg",quality:0.95},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff",scrollX:0,scrollY:0},
+      jsPDF:{unit:"mm",format:"a4",orientation:"portrait"},
+      pagebreak:{mode:["css","legacy"],avoid:[".pb-avoid","tr","img","svg"]}
+    }).from(src).outputPdf("blob");
+    window.scrollTo(0,y);
+    const res=await offerFile(slug(state.data.group)+"_Narrative-Brief_"+stamp()+".pdf",blob);
+    toast(res==="saved"?t(U.pdfSaved):res==="declined"?t(U.cancelled):res==="none"?t(U.dlNone):t(U.dlFail));
+  }catch(e){console.error(e);toast(t(U.dlFail))}
+  finally{btn.disabled=false;btn.textContent=t(U.download)}
+}
+async function saveJson(){
+  try{
+    const res=await offerFile(slug(state.data.group)+"_Narrative-Brief_progress.json",JSON.stringify({form:"narrative-brief",...state}));
+    if(res==="declined")toast(t(U.cancelled)); else if(res==="none")toast(t(U.dlNone)); else if(res==="saved")toast(t(U.saved));
+  }catch(e){toast(t(U.dlFail))}
+}
+document.getElementById("jsonIn").addEventListener("change",e=>{
+  const file=e.target.files[0]; e.target.value=""; if(!file) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    let d; try{d=JSON.parse(fr.result)}catch(err){toast(t(U.badJson));return}
+    if(!d||d.form!=="narrative-brief"||!d.data){toast(t(U.badJson));return}
+    const s=sanitize(d); const g=(s.data.group||"").trim()||(state?state.data.group:"");
+    if(!g){toast(t(U.badJson));return}
+    s.data.group=g; groupKey=keyFor(g); state=s; rememberGroup(g);
+    document.getElementById("gate").hidden=true; document.getElementById("app").hidden=false;
+    saveNow(); renderAll(); toast(t(U.loaded));
+  };
+  fr.readAsText(file);
+});
+
+/* ---------- gate ---------- */
+function toGate(){saveNow();state=null;document.getElementById("app").hidden=true;document.getElementById("gate").hidden=false;renderGate()}
+function renderGate(){
+  document.documentElement.lang=lang;
+  const g=document.getElementById("gate"); g.innerHTML="";
+  const inp=h("input",{type:"text",id:"groupIn",placeholder:t(U.groupPh),autocomplete:"off"});
+  const err=h("p",{class:"err",hidden:true},t(U.needGroup));
+  const startIt=()=>{const v=inp.value.trim();if(!v){err.hidden=false;inp.focus();return}openGroup(v)};
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")startIt()});
+  const rec=groups();
+  const art=h("div",{class:"gate-art"});
+  art.innerHTML=`<svg viewBox="0 0 460 120" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+   <path d="M20 100h80M140 78h70M250 56h70M360 34h80" stroke-width="5"/>
+   <path d="M60 92 q50-60 110-22 M180 70 q55-58 110-22 M290 48 q60-56 110-22" stroke-dasharray="4 7"/></g>
+   <circle cx="60" cy="86" r="9" fill="currentColor"/><path d="M60 77v-9" stroke="currentColor" stroke-width="2"/><circle cx="60" cy="66" r="3" fill="currentColor"/>
+   <path d="M400 26c0-12 10-18 18-18-1 10-6 18-18 18Zm0 0c0-9-7-14-13-14 0 8 5 14 13 14Z" fill="currentColor"/></svg>`;
+  g.append(h("div",{class:"gate-card"},
+    h("div",{style:"display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"},h("span",{class:"mono",style:"color:var(--muted)"},t(U.course)),langSeg()),
+    art,
+    h("h1",null,t(U.gateTitle)),
+    h("p",null,t(U.gateText)),
+    h("label",{for:"groupIn",style:"font-weight:700"},t(U.groupLabel)),
+    h("div",{class:"gate-row"},inp,h("button",{class:"btn primary",type:"button",onclick:startIt},t(U.start))),
+    err,
+    rec.length?h("div",null,h("div",{class:"mono",style:"color:var(--muted);margin-bottom:8px"},t(U.recent)),h("div",{class:"recent"},rec.map(x=>h("button",{class:"chipbtn",type:"button",onclick:()=>openGroup(x)},x)))):null,
+    h("button",{class:"btn ghost",type:"button",style:"align-self:flex-start;padding-left:0",onclick:()=>document.getElementById("jsonIn").click()},t(U.openFile))
+  ));
+}
+renderGate();
+</script>
