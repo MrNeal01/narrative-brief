@@ -31,6 +31,7 @@
   --ok:#6FD08F; --warn:#F2B35C; --danger:#F2877C; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
 h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -777,6 +778,7 @@ function buildPaper(){
     p.append(h("h2",null,(i+1)+". "+t(s.title)));
     if(s.visual==="curve"){
       const c=h("div",{style:"margin:4px 0 6px"}); c.innerHTML=curveSVG(d.beatrows.map(r=>r[4]),"#1A1F24","#6B7480","#0B7A75","#D7DDE2");
+      const sv=c.querySelector("svg"); sv.setAttribute("width","640"); sv.setAttribute("height","200");
       if(d.beatrows.some(r=>filledStr(r[4]))) p.append(c);
     }
     let pair=[];
