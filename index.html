@@ -142,6 +142,9 @@ input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent);ou
 #paper h2{font-size:16px;font-weight:800;color:var(--paper-accent);margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--paper-accent)}
 #paper h3{font-size:12.5px;font-family:var(--f-body);font-weight:700;margin:10px 0 3px;color:var(--paper-ink)}
 #paper p{margin:0}
+#paper .pb-avoid{padding-top:10px}
+#paper .pb-avoid>h3{margin-top:0}
+#paper .pb-avoid>h2{margin-top:8px}
 #paper .pmeta{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;margin-top:10px;padding:10px 12px;background:var(--paper-soft);border-radius:6px}
 #paper .pmeta span{color:var(--paper-muted)}
 #paper .kick{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-muted)}
@@ -775,18 +778,21 @@ function buildPaper(){
       h("div",null,h("span",null,t(U.members)+": "),[d.designer&&(lang==="tr"?"Tasarım: ":"Design: ")+d.designer,d.developer&&(lang==="tr"?"Geliştirme: ":"Dev: ")+d.developer,d.artist&&(lang==="tr"?"Sanat: ":"Art: ")+d.artist].filter(Boolean).join(" · ")||"—"),
       h("div",null,h("span",null,t(U.date)+": "),today)));
   SECTIONS.slice(1).forEach((s,i)=>{
-    p.append(h("h2",null,(i+1)+". "+t(s.title)));
+    // keep the section title on the same page as its first block
+    let head=h("div",{class:"pb-avoid"},h("h2",null,(i+1)+". "+t(s.title)));
+    p.append(head);
+    const add=el=>{if(head){head.append(el);head=null}else p.append(el)};
     if(s.visual==="curve"){
       const c=h("div",{style:"margin:4px 0 6px"}); c.innerHTML=curveSVG(d.beatrows.map(r=>r[4]),"#1A1F24","#6B7480","#0B7A75","#D7DDE2");
       const sv=c.querySelector("svg"); sv.setAttribute("width","640"); sv.setAttribute("height","200");
-      if(d.beatrows.some(r=>filledStr(r[4]))) p.append(c);
+      if(d.beatrows.some(r=>filledStr(r[4]))) add(c);
     }
     let pair=[];
-    const flushPair=()=>{if(pair.length){p.append(h("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:0 18px"},pair));pair=[]}};
+    const flushPair=()=>{if(pair.length){add(h("div",{style:"display:grid;grid-template-columns:1fr 1fr;gap:0 18px"},pair));pair=[]}};
     s.fields.forEach(f=>{
       if(f.id==="moodlink"&&!filledStr(d.moodlink)) return;
       const blk=h("div",{class:"pb-avoid"},h("h3",null,t(f.label)),pval(f,d[f.id]));
-      if(f.half) pair.push(blk); else {flushPair();p.append(blk)}
+      if(f.half) pair.push(blk); else {flushPair();add(blk)}
     });
     flushPair();
   });
